@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "./CrocoToken.sol";
 
 
 contract CrocoNFT is ERC721Enumerable, Ownable {
@@ -23,7 +24,7 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
     uint256 public whiteListStart;
     uint256 public publicStart;
 
-    IERC20 public crocoToken;
+    CrocoToken public crocoToken;
 
     enum Status {
         Closed,
@@ -47,7 +48,7 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
     constructor(
         string memory name,
         string memory symbol,
-        IERC20 _crocoToken
+        CrocoToken _crocoToken
     ) ERC721(name, symbol) {
         crocoToken = _crocoToken;
     }
@@ -150,7 +151,7 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
         require(totalSupply() + _tokenCount <= supply, "Purchase would exceed max tokens");
         require(_tokenCount > 0, "Invalid token count supplied");
 
-        crocoToken.transferFrom(msg.sender, address(this), pricePerTokenPublic * _tokenCount);
+        crocoToken.transferReferral(msg.sender, address(this), pricePerTokenPublic * _tokenCount, address(0));
         for (uint256 i = 0; i < _tokenCount ; i++) {
             uint256 _tokenId = _pickRandomUniqueId();
             _safeMint(msg.sender, _tokenId);
