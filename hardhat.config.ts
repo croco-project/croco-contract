@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const config: HardhatUserConfig = {
+    defaultNetwork: "bsc-testnet",
     solidity: {
         version: "0.8.9",
         settings: {

@@ -74,6 +74,9 @@ contract CrocoVesting is Ownable {
         return Stage.CLOSED;
     }
 
+    function toggleStarted() external onlyOwner {
+        started = !started;
+    }
 
     function currentRoundPrice() public view returns (uint256) {
         Stage _stage = stage();
@@ -126,7 +129,7 @@ contract CrocoVesting is Ownable {
         require(_stage != Stage.CLOSED, "Token sale is closed");
         uint256 currentPrice = currentRoundPrice();
         require(currentPrice > 0, "Current price is invalid");
-        uint256 totalPrice = _amount.mul(currentPrice);
+        uint256 totalPrice = _amount * currentPrice / 1 ether;
         usdt.transferFrom(msg.sender, address(this), totalPrice);
 
         address _referrer = crocoToken.addOrGetReferrer(referrer, msg.sender);
