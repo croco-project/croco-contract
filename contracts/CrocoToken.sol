@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-//import "hardhat/console.sol";
-
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -31,6 +29,10 @@ contract CrocoToken is IERC20, ERC20, Ownable {
         referralPermils = permils;
     }
 
+    function setReferralPool(address _pool) external onlyOwner {
+        REFERRAL_POOL = _pool;
+    }
+
     function transferReferral(address from, address to, uint256 amount, address referrer) public returns (bool) {
         if (referralActive) {
             address _referrer = addOrGetReferrer(referrer, to);
@@ -50,8 +52,11 @@ contract CrocoToken is IERC20, ERC20, Ownable {
             uint256 _id = getReferredId(_referrer, to);
             if (_id > 0) {
                 uint256 _bonusTemp = amount * referralPermils[_id] / 100000;
-                if (balanceOf(REFERRAL_POOL) > _bonusTemp) {
+                uint256 _balance = balanceOf(REFERRAL_POOL);
+                if (_balance > _bonusTemp) {
                     _bonus = _bonusTemp;
+                } else {
+                    _bonus = _balance;
                 }
             }
         }
@@ -82,7 +87,6 @@ contract CrocoToken is IERC20, ERC20, Ownable {
         if (_referrer != address(0)) {
             require(_referrer != referred, "Referred can not refer its referrer");
         }
-
 
         uint256 num = totalReferred[referrer]++;
         referralsIds[referrer][referred] = num + 1;
