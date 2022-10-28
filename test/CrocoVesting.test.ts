@@ -18,6 +18,7 @@ describe("CrocoVesting", function () {
 
         const CONTRACT3 = await ethers.getContractFactory("CrocoVesting");
         const crocoVesting = await CONTRACT3.deploy(crocoToken.address, mockToken.address);
+        await crocoToken.connect(acc1).approve(crocoVesting.address, ether(10000000));
         return {crocoToken, mockToken, crocoVesting, owner, acc1, acc2, acc3, accs};
     }
 
@@ -107,6 +108,31 @@ describe("CrocoVesting", function () {
             await time.increase(months(5));
             const unlockedPreseedData2 = await crocoVesting.getPreSeedAvailable(acc2.address);
             expect(unlockedPreseedData2).to.approximately(claim1Amount, 1);
+        });
+
+        it("Should be able to buy in private and use referral", async function () {
+            const {crocoToken, mockToken, crocoVesting, owner, acc2, acc3} = await loadFixture(withTimeSetAndOpen);
+            await mockToken.connect(owner).mint(acc2.address, ether(1000));
+            await time.increase(hours(2));
+            await mockToken.connect(acc2).approve(crocoVesting.address, ether(1000));
+            await crocoVesting.connect(acc2).buyToken(ether(1000), acc3.address);
+            const data1 = await crocoVesting.privateRound(acc2.address);
+            expect(data1.total).to.equal(ether(1000));
+            expect(data1.remainder).to.equal(ether(1000));
+            const data2 = await crocoVesting.privateRound(acc3.address);
+            expect(data2.total).to.equal(ether(50));
+            expect(data2.remainder).to.equal(ether(50));
+            await time.increase(months(5));
+            const unlockedPreseedData = await crocoVesting.getPrivateAvailable(acc2.address);
+            const unlockedPreseedData2 = await crocoVesting.getPrivateAvailable(acc3.address);
+            const claim1Amount = ether(1000).mul(5).div(12);
+            const claim2Amount = ether(50).mul(5).div(12);
+            expect(unlockedPreseedData).to.equal(claim1Amount);
+            expect(unlockedPreseedData2).to.equal(claim2Amount);
+            await crocoVesting.connect(acc2).claimPrivate();
+            expect(await crocoToken.balanceOf(acc2.address)).to.equal(claim1Amount);
+            await crocoVesting.connect(acc3).claimPrivate();
+            expect(await crocoToken.balanceOf(acc3.address)).to.equal(claim2Amount);
         });
     });
 });
