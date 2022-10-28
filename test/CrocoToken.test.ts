@@ -1,8 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { ethers } from "hardhat";
 import { expect } from "chai";
-
-const ether = (amount: number) => ethers.utils.parseEther(amount.toString());
+import { ether } from "../utils/utils";
 
 describe("CrocoToken", function () {
     async function deploy() {
