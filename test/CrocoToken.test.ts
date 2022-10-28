@@ -12,9 +12,7 @@ describe("CrocoToken", function () {
     }
 
     async function referralAcc1() {
-        const [owner, acc1, acc2, acc3, ...accs] = await ethers.getSigners();
-        const CONTRACT = await ethers.getContractFactory("CrocoToken");
-        const contract = await CONTRACT.deploy("Croco", "CRCO");
+        const {contract, owner, acc1, acc2, acc3, accs} = await loadFixture(deploy);
         await contract.connect(owner).mint(acc1.address, ether(100000));
         await contract.connect(owner).setReferralPool(acc1.address);
         await contract.connect(owner).toggleReferralActive();

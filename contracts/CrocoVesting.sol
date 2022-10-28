@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-//import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -12,6 +12,7 @@ import "./CrocoToken.sol";
 contract CrocoVesting is Ownable {
     using SafeMath for uint256;
     uint256 ONE_MONTH = 4 weeks;
+    uint256 UNLOCK_PERIOD_MONTHS = 12;
     bool started;
 
     CrocoToken public crocoToken;
@@ -22,9 +23,9 @@ contract CrocoVesting is Ownable {
         uint256 remainder;
     }
 
-    mapping(address => VestingData) preSeedRound;
-    mapping(address => VestingData) privateRound;
-    mapping(address => VestingData) publicRound;
+    mapping(address => VestingData) public preSeedRound;
+    mapping(address => VestingData) public privateRound;
+    mapping(address => VestingData) public publicRound;
     mapping(address => VestingData) founders;
     mapping(address => VestingData) advisors;
 
@@ -66,12 +67,12 @@ contract CrocoVesting is Ownable {
         uint256 _publicStart = publicStart;
         uint256 _privateStart = privateStart;
         uint256 _preSeedStart = preSeedStart;
-
-        if (_publicStart > 0 && block.timestamp > _publicStart) {
+        uint256 ts = block.timestamp;
+        if (_publicStart > 0 && ts > _publicStart) {
             return Stage.PUBLIC;
-        } else if (_privateStart > 0 && block.timestamp > _privateStart) {
+        } else if (_privateStart > 0 && ts > _privateStart) {
             return Stage.PRIVATE;
-        } else if (_preSeedStart > 0 && block.timestamp > _preSeedStart) {
+        } else if (_preSeedStart > 0 && ts > _preSeedStart) {
             return Stage.PRESEED;
         }
 
@@ -84,6 +85,10 @@ contract CrocoVesting is Ownable {
 
     function currentRoundPrice() public view returns (uint256) {
         Stage _stage = stage();
+        return _currentRoundPrice(_stage);
+    }
+
+    function _currentRoundPrice(Stage _stage) private view returns (uint256) {
         if (_stage == Stage.PUBLIC) {
             return publicPrice;
         } else if (_stage == Stage.PRIVATE) {
@@ -128,8 +133,13 @@ contract CrocoVesting is Ownable {
         advisorsUnlock = _advisorsUnlock;
     }
 
-    function getCurrentPrice(uint256 _amount) public view returns (uint256){
-        uint256 currentPrice = currentRoundPrice();
+    function getCurrentPrice(uint256 _amount) external view returns (uint256){
+        Stage _stage = stage();
+        return _getCurrentPrice(_amount, _stage);
+    }
+
+    function _getCurrentPrice(uint256 _amount, Stage _stage) private view returns (uint256) {
+        uint256 currentPrice = _currentRoundPrice(_stage);
         uint256 totalPrice = _amount * currentPrice / 1 ether;
         return totalPrice;
     }
@@ -137,15 +147,17 @@ contract CrocoVesting is Ownable {
     function buyToken(uint256 _amount, address referrer) public {
         Stage _stage = stage();
         require(_stage != Stage.CLOSED, "Token sale is closed");
-        uint256 totalPrice = getCurrentPrice(_amount);
+        uint256 totalPrice = _getCurrentPrice(_amount, _stage);
         require(totalPrice > 0, "Current price is invalid");
         usdt.transferFrom(msg.sender, address(this), totalPrice);
 
-
         uint256 _bonus;
-        address _referrer = crocoToken.addOrGetReferrer(referrer, msg.sender);
-        if (_referrer != address(0)) {
-            _bonus = crocoToken.getReferralAmount(msg.sender, _amount);
+        address _referrer;
+        if (referrer != address(0)) {
+            _referrer = crocoToken.addOrGetReferrer(referrer, msg.sender);
+            if (_referrer != address(0)) {
+                _bonus = crocoToken.getReferralAmount(msg.sender, _amount);
+            }
         }
 
         if (_stage == Stage.PRESEED) {
@@ -221,7 +233,7 @@ contract CrocoVesting is Ownable {
             return 0;
         }
         uint256 unlocks = (block.timestamp - unlock) / ONE_MONTH;
-        uint256 unlocked = _data.total * unlocks / 100;
+        uint256 unlocked = _data.total * unlocks / UNLOCK_PERIOD_MONTHS - (_data.total - _data.remainder);
         if (unlocked >= _data.remainder) {
             return _data.remainder;
         }
