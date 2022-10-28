@@ -137,7 +137,6 @@ contract CrocoVesting is Ownable {
     function buyToken(uint256 _amount, address referrer) public {
         Stage _stage = stage();
         require(_stage != Stage.CLOSED, "Token sale is closed");
-        uint256 currentPrice = currentRoundPrice();
         uint256 totalPrice = getCurrentPrice(_amount);
         require(totalPrice > 0, "Current price is invalid");
         usdt.transferFrom(msg.sender, address(this), totalPrice);

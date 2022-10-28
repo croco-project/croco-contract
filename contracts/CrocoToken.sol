@@ -86,6 +86,16 @@ contract CrocoToken is IERC20, ERC20, Ownable {
         return referralsIndex[referrer][index];
     }
 
+    function getAllReferrals(address referrer) public view returns (address[] memory) {
+        uint256 _referredNum = getReferredNumber(referrer);
+        address[] memory _referred = new address[](_referredNum);
+        for (uint256 i = 0; i < getReferredNumber(referrer); i++) {
+            _referred[i] = getReferredByIndex(referrer, i);
+        }
+        return _referred;
+    }
+
+    // todo: should be guarded
     function addOrGetReferrer(address referrer, address referred) public returns (address) {
         require(referrer != referred, "Can not add self as referrer");
         address _referrer = getReferrer(referred);
@@ -102,7 +112,6 @@ contract CrocoToken is IERC20, ERC20, Ownable {
 
     function setReferrer(address referrer, address referred) private {
         uint256 num = totalReferred[referrer]++;
-
         referralsIds[referrer][referred] = num;
         referralsIndex[referrer][num] = referred;
         referrals[referred] = referrer;
