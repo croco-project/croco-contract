@@ -6,8 +6,19 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const ZeroPK = "0x0000000000000000000000000000000000000000000000000000000000000000";
+
+const accounts = [
+    process.env.ACC1_PRIVATE_KEY || ZeroPK,
+    process.env.ACC2_PRIVATE_KEY || ZeroPK
+];
+
+const bscTestnetUrl = process.env.BSC_TESTNET_API_KEY || '';
+const mumbaiUrl = process.env.MUMBAI_API_KEY || '';
+const goerliUrl = process.env.BSC_TESTNET_API_KEY || '';
+
+
 const config: HardhatUserConfig = {
-    // defaultNetwork: "bsc-testnet",
     solidity: {
         version: "0.8.9",
         settings: {
@@ -20,20 +31,20 @@ const config: HardhatUserConfig = {
     networks: {
         hardhat: {},
         'bsc-testnet': {
-            url: process.env.BSC_TESTNET_API_KEY,
-            accounts: [process.env.BSC_TESTNET_PRIVATE_KEY!]
+            url: bscTestnetUrl,
+            accounts
         },
         mumbai: {
-            url: process.env.MUMBAI_API_KEY,
-            accounts: [process.env.GROELI_PRIVATE_KEY!]
+            url: mumbaiUrl,
+            accounts
         },
         goerli: {
-            url: process.env.GROELI_API_KEY,
-            accounts: [process.env.GROELI_PRIVATE_KEY!]
+            url: goerliUrl,
+            accounts
         },
         'optimism-goerli': {
             url: "https://goerli.optimism.io",
-            accounts: [process.env.OPTIMISMGROELI_PRIVATE_KEY!]
+            accounts
         },
     },
     gasReporter: {

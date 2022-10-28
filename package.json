@@ -6,7 +6,10 @@
   "scripts": {
     "test": "npx hardhat test",
     "compile": "npx hardhat compile",
-    "deploy:token": "npx harhat run scripts/deployToken.ts"
+    "deploy:token": "npx hardhat run scripts/deployToken.ts",
+    "deploy:test:crocotoken": "npx hardhat run scripts/test/deployCrocoToken.ts --network bsc-testnet",
+    "deploy:test:mocktoken": "npx hardhat run scripts/test/deployTestToken.ts --network bsc-testnet",
+    "deploy:test:vesting": "npx hardhat run scripts/test/deployVesting.ts --network bsc-testnet"
   },
   "author": "",
   "license": "ISC",
