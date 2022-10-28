@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const config: HardhatUserConfig = {
-    defaultNetwork: "bsc-testnet",
+    // defaultNetwork: "bsc-testnet",
     solidity: {
         version: "0.8.9",
         settings: {
@@ -38,7 +38,9 @@ const config: HardhatUserConfig = {
     },
     gasReporter: {
         currency: 'USD',
-        gasPrice: 30,
+        token: 'BNB',
+        coinmarketcap: '7c509189-8d56-4d3b-9381-4a24b2609ed2',
+        gasPrice: 7,
         enabled: true
     },
     etherscan: {

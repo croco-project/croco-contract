@@ -63,11 +63,15 @@ contract CrocoVesting is Ownable {
             return Stage.CLOSED;
         }
 
-        if (block.timestamp > publicStart) {
+        uint256 _publicStart = publicStart;
+        uint256 _privateStart = privateStart;
+        uint256 _preSeedStart = preSeedStart;
+
+        if (_publicStart > 0 && block.timestamp > _publicStart) {
             return Stage.PUBLIC;
-        } else if (block.timestamp > privatePrice) {
+        } else if (_privateStart > 0 && block.timestamp > _privateStart) {
             return Stage.PRIVATE;
-        } else if (block.timestamp > preSeedPrice) {
+        } else if (_preSeedStart > 0 && block.timestamp > _preSeedStart) {
             return Stage.PRESEED;
         }
 
@@ -124,16 +128,26 @@ contract CrocoVesting is Ownable {
         advisorsUnlock = _advisorsUnlock;
     }
 
+    function getCurrentPrice(uint256 _amount) public view returns (uint256){
+        uint256 currentPrice = currentRoundPrice();
+        uint256 totalPrice = _amount * currentPrice / 1 ether;
+        return totalPrice;
+    }
+
     function buyToken(uint256 _amount, address referrer) public {
         Stage _stage = stage();
         require(_stage != Stage.CLOSED, "Token sale is closed");
         uint256 currentPrice = currentRoundPrice();
-        require(currentPrice > 0, "Current price is invalid");
-        uint256 totalPrice = _amount * currentPrice / 1 ether;
+        uint256 totalPrice = getCurrentPrice(_amount);
+        require(totalPrice > 0, "Current price is invalid");
         usdt.transferFrom(msg.sender, address(this), totalPrice);
 
+
+        uint256 _bonus;
         address _referrer = crocoToken.addOrGetReferrer(referrer, msg.sender);
-        uint256 _bonus = crocoToken.getReferralAmount(msg.sender, _amount);
+        if (_referrer != address(0)) {
+            _bonus = crocoToken.getReferralAmount(msg.sender, _amount);
+        }
 
         if (_stage == Stage.PRESEED) {
             preSeedRound[msg.sender].total += _amount;
