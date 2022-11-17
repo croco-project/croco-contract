@@ -102,30 +102,15 @@ describe("CrocoToken", function () {
 
         });
 
-        //
-        // it("Should transfer referral tokens", async function () {
-        //     const {contract, owner, acc1, acc2, acc3, accs} = await loadFixture(referralAcc1);
-        //     await contract.connect(owner).mint(acc2.address, ether(1000));
-        //     await contract.connect(acc2).approve(acc2.address, ether(1000));
-        //     await contract.connect(acc2).transferReferral(acc2.address, owner.address, ether(100), acc3.address);
-        //     expect(await contract.balanceOf(acc3.address)).to.equal(ether(5));
-        //     expect(await contract.getReferrer(owner.address)).to.equal(acc3.address);
-        //     expect(await contract.getReferredNumber(acc3.address)).to.equal(1);
-        // });
-        //
-        // it("Should return all referrals", async function () {
-        //     const {contract, owner, acc1, acc2, acc3, accs} = await loadFixture(referralAcc1);
-        //     await contract.connect(owner).mint(acc2.address, ether(1000));
-        //     await contract.connect(acc2).approve(acc2.address, ether(1000));
-        //     await contract.connect(acc2).transferReferral(acc2.address, accs[0].address, ether(100), acc3.address);
-        //     await contract.connect(acc2).transferReferral(acc2.address, accs[1].address, ether(100), acc3.address);
-        //     await contract.connect(acc2).transferReferral(acc2.address, accs[2].address, ether(100), acc3.address);
-        //     const referrals = await contract.getAllReferrals(acc3.address);
-        //     expect(referrals[0]).to.equal(accs[0].address);
-        //     expect(referrals[1]).to.equal(accs[1].address);
-        //     expect(referrals[2]).to.equal(accs[2].address);
-        // });
-
+        it("Should transfer referral tokens", async function () {
+            const {contract, owner, acc1, acc2, acc3, accs} = await loadFixture(referralAcc1);
+            await contract.connect(owner).mint(acc2.address, ether(1000));
+            await contract.connect(acc2).approve(acc2.address, ether(1000));
+            await contract.connect(acc2).transferReferral(acc2.address, owner.address, ether(100), acc3.address);
+            expect(await contract.balanceOf(acc3.address)).to.equal(ether(8));
+            expect(await contract.getReferrer(owner.address)).to.equal(acc3.address);
+            expect(await contract.getReferredNumber(acc3.address)).to.equal(1);
+        });
 
     });
 });
