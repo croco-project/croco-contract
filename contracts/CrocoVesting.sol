@@ -140,7 +140,10 @@ contract CrocoVesting is Ownable {
 
     function _getStageReceivedAmount(uint256 _usdt, Stage _stage) private view returns (uint256) {
         uint256 currentPrice = _currentRoundPrice(_stage);
-        uint256 totalToken = _usdt / currentPrice;
+        if (currentPrice == 0) {
+            return 0;
+        }
+        uint256 totalToken = _usdt * 1 ether / currentPrice;
         return totalToken;
     }
 
@@ -180,8 +183,8 @@ contract CrocoVesting is Ownable {
             privateRound[msg.sender].remainder += totalToken;
             for (uint256 i = 0; i < _bonuses.length; i++) {
                 if (_bonuses[i].to != address(0) && _bonuses[i].bonus > 0) {
-                    preSeedRound[_bonuses[i].to].total += _bonuses[i].bonus;
-                    preSeedRound[_bonuses[i].to].remainder += _bonuses[i].bonus;
+                    privateRound[_bonuses[i].to].total += _bonuses[i].bonus;
+                    privateRound[_bonuses[i].to].remainder += _bonuses[i].bonus;
                 }
             }
         } else if (_stage == Stage.PUBLIC) {
@@ -189,8 +192,8 @@ contract CrocoVesting is Ownable {
             publicRound[msg.sender].remainder += totalToken;
             for (uint256 i = 0; i < _bonuses.length; i++) {
                 if (_bonuses[i].to != address(0) && _bonuses[i].bonus > 0) {
-                    preSeedRound[_bonuses[i].to].total += _bonuses[i].bonus;
-                    preSeedRound[_bonuses[i].to].remainder += _bonuses[i].bonus;
+                    publicRound[_bonuses[i].to].total += _bonuses[i].bonus;
+                    publicRound[_bonuses[i].to].remainder += _bonuses[i].bonus;
                 }
             }
         }
