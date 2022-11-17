@@ -133,58 +133,70 @@ contract CrocoVesting is Ownable {
         advisorsUnlock = _advisorsUnlock;
     }
 
-    function getCurrentPrice(uint256 _amount) external view returns (uint256){
+    function getStageReceivedAmount(uint256 _usdt) external view returns (uint256){
         Stage _stage = stage();
-        return _getCurrentPrice(_amount, _stage);
+        return _getStageReceivedAmount(_usdt, _stage);
     }
 
-    function _getCurrentPrice(uint256 _amount, Stage _stage) private view returns (uint256) {
+    function _getStageReceivedAmount(uint256 _usdt, Stage _stage) private view returns (uint256) {
         uint256 currentPrice = _currentRoundPrice(_stage);
-        uint256 totalPrice = _amount * currentPrice / 1 ether;
-        return totalPrice;
+        uint256 totalToken = _usdt / currentPrice;
+        return totalToken;
     }
 
-    function buyToken(uint256 _amount, address referrer) public {
+    function buyToken(uint256 _usdt, address referrer) public {
         Stage _stage = stage();
         require(_stage != Stage.CLOSED, "Token sale is closed");
-        uint256 totalPrice = _getCurrentPrice(_amount, _stage);
-        require(totalPrice > 0, "Current price is invalid");
-        usdt.transferFrom(msg.sender, address(this), totalPrice);
+        uint256 totalToken = _getStageReceivedAmount(_usdt, _stage);
+        require(totalToken > 0, "Current price is invalid");
+        usdt.transferFrom(msg.sender, address(this), _usdt);
 
-        uint256 _bonus;
+
+        uint256 totalBonus = 0;
+        CrocoToken.Bonus[] memory _bonuses;
         address _referrer;
         if (referrer != address(0)) {
             _referrer = crocoToken.addOrGetReferrer(referrer, msg.sender);
             if (_referrer != address(0)) {
-                _bonus = crocoToken.getReferralAmount(msg.sender, _amount);
+                _bonuses = crocoToken.getReferralAmount(msg.sender, totalToken);
+
+                for (uint256 i = 0; i < _bonuses.length; i++) {
+                    totalBonus += _bonuses[i].bonus;
+                }
             }
         }
 
         if (_stage == Stage.PRESEED) {
-            preSeedRound[msg.sender].total += _amount;
-            preSeedRound[msg.sender].remainder += _amount;
-            if (_bonus > 0) {
-                preSeedRound[_referrer].total += _bonus;
-                preSeedRound[_referrer].remainder += _bonus;
+            preSeedRound[msg.sender].total += totalToken;
+            preSeedRound[msg.sender].remainder += totalToken;
+            for (uint256 i = 0; i < _bonuses.length; i++) {
+                if (_bonuses[i].to != address(0) && _bonuses[i].bonus > 0) {
+                    preSeedRound[_bonuses[i].to].total += _bonuses[i].bonus;
+                    preSeedRound[_bonuses[i].to].remainder += _bonuses[i].bonus;
+                }
             }
         } else if (_stage == Stage.PRIVATE) {
-            privateRound[msg.sender].total += _amount;
-            privateRound[msg.sender].remainder += _amount;
-            if (_bonus > 0) {
-                privateRound[_referrer].total += _bonus;
-                privateRound[_referrer].remainder += _bonus;
+            privateRound[msg.sender].total += totalToken;
+            privateRound[msg.sender].remainder += totalToken;
+            for (uint256 i = 0; i < _bonuses.length; i++) {
+                if (_bonuses[i].to != address(0) && _bonuses[i].bonus > 0) {
+                    preSeedRound[_bonuses[i].to].total += _bonuses[i].bonus;
+                    preSeedRound[_bonuses[i].to].remainder += _bonuses[i].bonus;
+                }
             }
         } else if (_stage == Stage.PUBLIC) {
-            publicRound[msg.sender].total += _amount;
-            publicRound[msg.sender].remainder += _amount;
-            if (_bonus > 0) {
-                publicRound[_referrer].total += _bonus;
-                publicRound[_referrer].remainder += _bonus;
+            publicRound[msg.sender].total += totalToken;
+            publicRound[msg.sender].remainder += totalToken;
+            for (uint256 i = 0; i < _bonuses.length; i++) {
+                if (_bonuses[i].to != address(0) && _bonuses[i].bonus > 0) {
+                    preSeedRound[_bonuses[i].to].total += _bonuses[i].bonus;
+                    preSeedRound[_bonuses[i].to].remainder += _bonuses[i].bonus;
+                }
             }
         }
 
-        if (_bonus > 0) {
-            crocoToken.transferFrom(crocoToken.REFERRAL_POOL(), address(this), _bonus);
+        if (totalBonus > 0) {
+            crocoToken.transferFrom(crocoToken.REFERRAL_POOL(), address(this), totalBonus);
         }
     }
 

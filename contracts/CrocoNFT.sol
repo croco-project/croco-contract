@@ -15,33 +15,24 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
     uint256[10000] private randomArray;
     uint256 private _randomIndex;
 
-    uint256 public pricePerTokenPublic = 10 ether;
-    uint256 public pricePerTokenWl = 8 ether;
+    uint256 public pricePerToken = 1 ether;
 
     bool public saleOpen;
     string public baseURI;
-
-    uint256 public whiteListStart;
-    uint256 public publicStart;
 
     CrocoToken public crocoToken;
 
     enum Status {
         Closed,
         SoldOut,
-        WhiteListMint,
-        PublicMint,
-        NotStarted
+        Open
     }
 
     struct Info {
         Status stage;
-        uint256 whiteListStart;
-        uint256 publicStart;
         bool saleOpen;
         uint256 supply;
         uint256 minted;
-        uint256 pricePerTokenWl;
         uint256 pricePerTokenPublic;
     }
 
@@ -56,13 +47,10 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
     function info() public view returns (Info memory) {
         return Info(
             stage(),
-            whiteListStart,
-            publicStart,
             saleOpen,
             supply,
             totalSupply(),
-            pricePerTokenWl,
-            pricePerTokenPublic
+            pricePerToken
         );
     }
 
@@ -75,14 +63,7 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
             return Status.SoldOut;
         }
 
-        uint256 ts = block.timestamp;
-        if (publicStart != 0 && ts >= publicStart) {
-            return Status.PublicMint;
-        } else if (whiteListStart != 0 && ts >= whiteListStart) {
-            return Status.WhiteListMint;
-        }
-
-        return Status.NotStarted;
+        return Status.Open;
     }
 
     function withdraw() public onlyOwner {
@@ -102,12 +83,6 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
         saleOpen = false;
     }
 
-    function setSaleStart(uint256 _whiteListStart, uint256 _publicStart) onlyOwner external {
-        require(_whiteListStart > block.timestamp, "Whitelist should be in the future");
-        whiteListStart = _whiteListStart;
-        publicStart = _publicStart;
-    }
-
     function setBaseURI(string memory _uri) external onlyOwner {
         baseURI = _uri;
     }
@@ -118,18 +93,14 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
     }
 
     function setPricePublic(uint256 _price) external onlyOwner {
-        pricePerTokenPublic = _price;
-    }
-
-    function setPriceWl(uint256 _price) external onlyOwner {
-        pricePerTokenWl = _price;
+        pricePerToken = _price;
     }
 
     function setSupply(uint256 _supply) external onlyOwner {
         supply = _supply;
     }
 
-    function genRandom() public view returns (uint256) {
+    function genRandom() private view returns (uint256) {
         return uint256(blockhash(block.number - 1));
     }
 
@@ -144,15 +115,15 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
         randomArray[len - 1] = 0;
     }
 
-    function mintPublic(uint256 _tokenCount) external {
+    function mintPublic(uint256 _tokenCount, address referral) external {
         require(saleOpen, "Sale is closed");
         require(address(crocoToken) != address(0), "Croco token not set");
-        require(stage() == Status.PublicMint, "Public mint not started");
+        require(stage() == Status.Open, "Public mint not started");
         require(totalSupply() + _tokenCount <= supply, "Purchase would exceed max tokens");
         require(_tokenCount > 0, "Invalid token count supplied");
 
-        crocoToken.transferReferral(msg.sender, address(this), pricePerTokenPublic * _tokenCount, address(0));
-        for (uint256 i = 0; i < _tokenCount ; i++) {
+        crocoToken.transferReferral(msg.sender, address(this), pricePerToken * _tokenCount, referral);
+        for (uint256 i = 0; i < _tokenCount; i++) {
             uint256 _tokenId = _pickRandomUniqueId();
             _safeMint(msg.sender, _tokenId);
         }
