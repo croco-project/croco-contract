@@ -42,8 +42,10 @@ describe("CrocoToken", function () {
 
         it("Should change referral permils", async function () {
             const {contract, owner, acc1} = await loadFixture(deploy);
-            expect(await contract.referralPermils(0)).to.equal(800);
-            expect(await contract.referralPermils(1)).to.equal(400);
+            const permils0 = await contract.referralPermils(0);
+            const permils1 = await contract.referralPermils(1);
+            expect(await contract.referralPermils(0)).to.equal(permils0);
+            expect(await contract.referralPermils(1)).to.equal(permils1);
             await contract.connect(owner).setReferralPermils([600, 10, 10]);
             expect(await contract.referralPermils(0)).to.equal(600);
             expect(await contract.referralPermils(1)).to.equal(10);
@@ -92,13 +94,17 @@ describe("CrocoToken", function () {
             await contract.connect(owner).addOrGetReferrer(acc2.address, acc3.address);
             await contract.connect(owner).addOrGetReferrer(acc3.address, accs[3].address);
 
+            const permil0 = await contract.referralPermils(0);
+            const permil1 = await contract.referralPermils(1);
+            const permil2 = await contract.referralPermils(2);
+
             const bonuses = await contract.getReferralAmount(acc3.address, ether(100));
             expect(bonuses[0].to).to.equal(acc2.address);
-            expect(bonuses[0].bonus).to.equal(ether(8));
+            expect(bonuses[0].bonus).to.equal(ether(100).mul(permil0).div(10000));
             expect(bonuses[1].to).to.equal(acc1.address);
-            expect(bonuses[1].bonus).to.equal(ether(4));
+            expect(bonuses[1].bonus).to.equal(ether(100).mul(permil1).div(10000));
             expect(bonuses[2].to).to.equal(owner.address);
-            expect(bonuses[2].bonus).to.equal(ether(2));
+            expect(bonuses[2].bonus).to.equal(ether(100).mul(permil2).div(10000));
 
         });
 
@@ -107,10 +113,27 @@ describe("CrocoToken", function () {
             await contract.connect(owner).mint(acc2.address, ether(1000));
             await contract.connect(acc2).approve(acc2.address, ether(1000));
             await contract.connect(acc2).transferReferral(acc2.address, owner.address, ether(100), acc3.address);
-            expect(await contract.balanceOf(acc3.address)).to.equal(ether(8));
+            const permil0 = await contract.referralPermils(0);
+
+            expect(await contract.balanceOf(acc3.address)).to.equal(ether(100).mul(permil0).div(10000));
             expect(await contract.getReferrer(owner.address)).to.equal(acc3.address);
             expect(await contract.getReferredNumber(acc3.address)).to.equal(1);
         });
-
     });
+
+    describe("Referral layers Tests", function () {
+
+        it("Should transfer referral tokens", async function () {
+            const {contract, owner, acc1, acc2, acc3, accs} = await loadFixture(referralAcc1);
+            await contract.connect(owner).mint(acc2.address, ether(1000));
+            await contract.connect(acc2).approve(acc2.address, ether(1000));
+            await contract.connect(acc2).transferReferral(acc2.address, owner.address, ether(100), acc3.address);
+            const permil0 = await contract.referralPermils(0);
+
+            expect(await contract.balanceOf(acc3.address)).to.equal(ether(100).mul(permil0).div(10000));
+            expect(await contract.getReferrer(owner.address)).to.equal(acc3.address);
+            expect(await contract.getReferredNumber(acc3.address)).to.equal(1);
+        });
+    });
+
 });

@@ -120,17 +120,19 @@ describe("CrocoVesting", function () {
             await crocoVesting.connect(acc2).buyToken(ether(1000), acc3.address);
             const data1 = await crocoVesting.privateRound(acc2.address);
             let currentRoundPrice = await crocoVesting.currentRoundPrice();
+            const permil0 = await crocoToken.referralPermils(0);
+
             expect(data1.total).to.equal(ether(1000).mul(ether(1)).div(currentRoundPrice));
             expect(data1.remainder).to.equal(ether(1000).mul(ether(1)).div(currentRoundPrice));
             const data2 = await crocoVesting.privateRound(acc3.address);
-            expect(data2.total).to.equal(ether(80).mul(ether(1)).div(currentRoundPrice));
-            expect(data2.remainder).to.equal(ether(80).mul(ether(1)).div(currentRoundPrice));
+            expect(data2.total).to.equal(ether(1000).mul(permil0).div(10000).mul(ether(1)).div(currentRoundPrice));
+            expect(data2.remainder).to.equal(ether(1000).mul(permil0).div(10000).mul(ether(1)).div(currentRoundPrice));
 
             await time.increase(months(5));
             const unlockedPreseedData = await crocoVesting.getPrivateAvailable(acc2.address);
             const unlockedPreseedData2 = await crocoVesting.getPrivateAvailable(acc3.address);
             const claim1Amount = ether(1000).mul(ether(1)).div(currentRoundPrice).mul(5).div(12);
-            const claim2Amount = ether(80).mul(ether(1)).div(currentRoundPrice).mul(5).div(12);
+            const claim2Amount = ether(1000).mul(permil0).div(10000).mul(ether(1)).div(currentRoundPrice).mul(5).div(12);
             expect(unlockedPreseedData).to.equal(claim1Amount);
             expect(unlockedPreseedData2).to.equal(claim2Amount);
             await crocoVesting.connect(acc2).claimPrivate();

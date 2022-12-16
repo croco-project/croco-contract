@@ -10,10 +10,11 @@ contract CrocoToken is IERC20, ERC20, Ownable {
 
     mapping(address => address) referrals; // referred -> referrer
     mapping(address => uint256) totalReferred; // referrer -> total referred
+    mapping(address => mapping(uint256 => uint256)) public referredLayers;
 
     // levels
-    // 3 -> 9 -> 27 (total 39) to get free nft
-    uint256[] public referralPermils = [800, 400, 200];
+    // 3 -> 9 -> 27 (total 39)
+    uint256[] public referralPermils = [500, 400, 300, 100, 100, 100, 100, 100, 100, 100];
 
     address public REFERRAL_POOL;
     bool public referralActive;
@@ -119,13 +120,14 @@ contract CrocoToken is IERC20, ERC20, Ownable {
     function setReferrer(address referrer, address referred) private {
         referrals[referred] = referrer;
         totalReferred[referrer]++;
-
+        referredLayers[referrer][0]++;
         address _referrer = referrer;
         for (uint256 i = 0; i < referralPermils.length - 1; i++) {
             address __referrer = getReferrer(_referrer);
             _referrer = __referrer;
             if (__referrer != address(0)) {
                 totalReferred[__referrer]++;
+                referredLayers[__referrer][i + 1]++;
             } else {
                 break;
             }
