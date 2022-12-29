@@ -21,6 +21,7 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
     string public baseURI;
 
     CrocoToken public crocoToken;
+    IERC20 public USDT;
 
     enum Status {
         Closed,
@@ -39,9 +40,11 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
     constructor(
         string memory name,
         string memory symbol,
-        CrocoToken _crocoToken
+        CrocoToken _crocoToken,
+        IERC20 _usdt
     ) ERC721(name, symbol) {
         crocoToken = _crocoToken;
+        USDT = _usdt;
     }
 
     function info() public view returns (Info memory) {
@@ -122,7 +125,10 @@ contract CrocoNFT is ERC721Enumerable, Ownable {
         require(totalSupply() + _tokenCount <= supply, "Purchase would exceed max tokens");
         require(_tokenCount > 0, "Invalid token count supplied");
 
-        crocoToken.transferReferral(msg.sender, address(this), pricePerToken * _tokenCount, referral);
+
+        USDT.transferFrom(msg.sender, address(this), pricePerToken * _tokenCount);
+        crocoToken.addOrGetReferrer(referral, msg.sender);
+
         for (uint256 i = 0; i < _tokenCount; i++) {
             uint256 _tokenId = _pickRandomUniqueId();
             _safeMint(msg.sender, _tokenId);

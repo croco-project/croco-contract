@@ -8,11 +8,10 @@ import "hardhat/console.sol";
 
 contract CrocoToken is IERC20, ERC20, Ownable {
 
-    mapping(address => address) referrals; // referred -> referrer
-    mapping(address => uint256) totalReferred; // referrer -> total referred
+    mapping(address => address) public referrals; // referred -> referrer
+    mapping(address => uint256) public totalReferred; // referrer -> total referred
     mapping(address => mapping(uint256 => uint256)) public referredLayers;
 
-    // levels
     // 3 -> 9 -> 27 (total 39)
     uint256[] public referralPermils = [500, 400, 300, 100, 100, 100, 100, 100, 100, 100];
 
@@ -31,6 +30,7 @@ contract CrocoToken is IERC20, ERC20, Ownable {
         _;
     }
 
+    event AddReferral(address referrer, address referred, uint256 layer);
 
     constructor(
         string memory name,
@@ -58,7 +58,6 @@ contract CrocoToken is IERC20, ERC20, Ownable {
     function setReferralPool(address _pool) external onlyOwner {
         REFERRAL_POOL = _pool;
     }
-
 
     function toggleReferralActive() external onlyOwner {
         referralActive = !referralActive;
@@ -121,6 +120,7 @@ contract CrocoToken is IERC20, ERC20, Ownable {
         referrals[referred] = referrer;
         totalReferred[referrer]++;
         referredLayers[referrer][0]++;
+        emit AddReferral(referrer, referred, 0);
         address _referrer = referrer;
         for (uint256 i = 0; i < referralPermils.length - 1; i++) {
             address __referrer = getReferrer(_referrer);
@@ -128,6 +128,7 @@ contract CrocoToken is IERC20, ERC20, Ownable {
             if (__referrer != address(0)) {
                 totalReferred[__referrer]++;
                 referredLayers[__referrer][i + 1]++;
+                emit AddReferral(__referrer, referred, i + 1);
             } else {
                 break;
             }

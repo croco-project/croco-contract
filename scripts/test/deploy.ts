@@ -71,6 +71,23 @@ async function main() {
         console.log(e);
     }
 
+
+    const CONTRACT4 = await ethers.getContractFactory("CrocoNFT");
+    const crocoNFT = await CONTRACT4.deploy("NFT", "C", crocoTokenAddress, mockTokenAddress);
+    await crocoNFT.connect(owner).setSaleOpen();
+    await crocoToken.addOperator(crocoNFT.address);
+
+    try {
+        console.log(`CrocoNFT deployed to ${crocoNFT.address}`);
+        await run("verify:verify", {
+            address: crocoNFT.address,
+            constructorArguments: ["NFT", "C", crocoTokenAddress, mockTokenAddress],
+        });
+    } catch (e) {
+        console.log(e);
+    }
+
+
 }
 
 main().catch((error) => {
